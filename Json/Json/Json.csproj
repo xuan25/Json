@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{8C246679-2D03-4483-A543-74903FE6B561}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Json</RootNamespace>
-    <AssemblyName>Json</AssemblyName>
+    <RootNamespace>JsonDemo</RootNamespace>
+    <AssemblyName>JsonDemo</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -43,7 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Json.cs" />
+    <Compile Include="JsonUtil.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
+using JsonUtil;
 
-namespace Json
+namespace JsonDemo
 {
     class Program
     {
@@ -86,10 +86,10 @@ namespace Json
             jsonValue.Add(true);
             jsonValue.Add(123);
             jsonValue.Add(456);
-            Console.WriteLine(jsonValue);
+            Console.WriteLine(jsonValue.ToString());
             jsonValue.Remove(2);
             jsonValue.Insert(0, "def");
-            Console.WriteLine(jsonValue);
+            Console.WriteLine(jsonValue.ToString());
             Console.WriteLine(jsonValue.Count);
             Console.WriteLine((string)jsonValue[1]);
             Console.WriteLine();
@@ -100,9 +100,9 @@ namespace Json
             jsonValue.Add("a", 123);
             jsonValue.Add("b", 456);
             jsonValue.Add("c", 789);
-            Console.WriteLine(jsonValue);
+            Console.WriteLine(jsonValue.ToString());
             jsonValue.Remove("b");
-            Console.WriteLine(jsonValue);
+            Console.WriteLine(jsonValue.ToString());
             Console.WriteLine(jsonValue.Count);
             Console.WriteLine(jsonValue.Contains("a"));
             Console.WriteLine((double)jsonValue["a"]);

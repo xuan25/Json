@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
-namespace Json
+namespace JsonUtil
 {
     public class Json
     {
@@ -252,82 +253,82 @@ namespace Json
 
             #region Cast
 
-            public static explicit operator bool(Value obj)
+            public static implicit operator bool(Value obj)
             {
                 return (bool)obj.Data;
             }
 
-            public static explicit operator byte(Value obj)
+            public static implicit operator byte(Value obj)
             {
                 return (byte)(double)obj.Data;
             }
 
-            public static explicit operator char(Value obj)
+            public static implicit operator char(Value obj)
             {
                 return (char)(double)obj.Data;
             }
 
-            public static explicit operator decimal(Value obj)
+            public static implicit operator decimal(Value obj)
             {
                 return new decimal((double)obj.Data);
             }
 
-            public static explicit operator double(Value obj)
+            public static implicit operator double(Value obj)
             {
                 return (double)obj.Data;
             }
 
-            public static explicit operator float(Value obj)
+            public static implicit operator float(Value obj)
             {
                 return (float)(double)obj.Data;
             }
 
-            public static explicit operator int(Value obj)
+            public static implicit operator int(Value obj)
             {
                 return (int)(double)obj.Data;
             }
 
-            public static explicit operator long(Value obj)
+            public static implicit operator long(Value obj)
             {
                 return (long)(double)obj.Data;
             }
 
-            public static explicit operator sbyte(Value obj)
+            public static implicit operator sbyte(Value obj)
             {
                 return (sbyte)(double)obj.Data;
             }
 
-            public static explicit operator short(Value obj)
+            public static implicit operator short(Value obj)
             {
                 return (short)(double)obj.Data;
             }
 
-            public static explicit operator uint(Value obj)
+            public static implicit operator uint(Value obj)
             {
                 return (uint)(double)obj.Data;
             }
 
-            public static explicit operator ulong(Value obj)
+            public static implicit operator ulong(Value obj)
             {
                 return (ulong)(double)obj.Data;
             }
 
-            public static explicit operator ushort(Value obj)
+            public static implicit operator ushort(Value obj)
             {
                 return (ushort)(double)obj.Data;
             }
 
-            public static explicit operator string(Value obj)
+            public static implicit operator string(Value obj)
             {
                 return (string)obj.Data;
             }
 
-            public static explicit operator Dictionary<string, Value>(Value obj)
+            public static implicit operator Dictionary<string, Value>(Value obj)
             {
                 return (Dictionary<string, Value>)obj.Data;
             }
 
-            public static explicit operator List<Value>(Value obj)
+            public static implicit operator List<Value>(Value obj)
             {
                 return (List<Value>)obj.Data;
             }
@@ -748,25 +749,9 @@ namespace Json
             {
                 if (json == null || string.IsNullOrWhiteSpace(json))
                     return null;
-                using (Stream stream = new MemoryStream(Encoding.Default.GetBytes(json)))
+                using (Stream stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
                 {
                     return Parse(stream);
-                }
-            }
-
-            /// <summary>
-            /// Parse a json text to a json object or json array with a perset capacity of the string builder
-            /// </summary>
-            /// <param name="json">The json text need to been parse</param>
-            /// <param name="stringBuilderCapacity">Perset capacity of the string builder</param>
-            /// <returns>A json object or json array</returns>
-            public static Value Parse(string json, int stringBuilderCapacity)
-            {
-                if (json == null || string.IsNullOrWhiteSpace(json))
-                    return null;
-                using (Stream stream = new MemoryStream(Encoding.Default.GetBytes(json)))
-                {
-                    return Parse(stream, stringBuilderCapacity);
                 }
             }
 
@@ -780,24 +765,8 @@ namespace Json
                 if (stream == null)
                     return null;
                 stringBuilder = new StringBuilder();
-                Value jsonValue = StartParse(stream);
-                stringBuilder = null;
-                return jsonValue;
-            }
-
-            /// <summary>
-            /// Parse a json stream to a json object or json array with a perset capacity of the string builder
-            /// </summary>
-            /// <param name="stream">The json stream need to been parse</param>
-            /// <param name="stringBuilderCapacity">Perset capacity of the string builder</param>
-            /// <returns>A json object or json array</returns>
-            public static Value Parse(Stream stream, int stringBuilderCapacity)
-            {
-                if (stream == null)
-                    return null;
-                stringBuilder = new StringBuilder(stringBuilderCapacity);
-                Value jsonValue = StartParse(stream);
-                stringBuilder = null;
+                StreamReader streamReader = new StreamReader(stream);
+                Value jsonValue = StartParse(streamReader);
                 return jsonValue;
             }
 
@@ -825,127 +794,147 @@ namespace Json
 
             #region Private methods
 
-            private static Value StartParse(Stream stream)
+            private static Value StartParse(StreamReader streamReader)
             {
-                int buffer = ReadNextMark(stream);
+                int buffer = ReadNextMark(streamReader);
                 switch (buffer)
                 {
                     case '{':
-                        return ParseObject(stream, out _);
+                        return ParseObject(streamReader, out _);
                     case '[':
-                        return ParseArray(stream, out _);
+                        return ParseArray(streamReader, out _);
                     case -1:
                     default:
                         return null;
                 }
             }
 
-            private static Value ParseObject(Stream stream, out int endMark)
+            private static Value ParseObject(StreamReader streamReader, out int endMark)
             {
                 Dictionary<string, Value> dic = new Dictionary<string, Value>();
                 while (true)
                 {
-                    ParseKeyValuePaire(stream, out string key, out Value value, out int end);
-                    dic.Add(key, value);
+                    ParseKeyValuePaire(streamReader, out string key, out Value value, out int end);
+                    if (key != null)
+                        dic.Add(key, value);
                     if (end == '}')
                         break;
                     else if (end != ',')
-                        throw new JsonParseException("Expected Object ending not found", stream.Position);
+                        throw new JsonParseException("Expected Object ending not found", streamReader.BaseStream.Position);
                 }
-                endMark = ReadNextMark(stream);
+                endMark = ReadNextMark(streamReader);
                 return dic;
             }
 
-            private static Value ParseArray(Stream stream, out int endMark)
+            private static Value ParseArray(StreamReader streamReader, out int endMark)
             {
                 List<Value> list = new List<Value>();
                 while (true)
                 {
-                    Value jsonValue = ParseValue(stream, out int end);
-                    list.Add(jsonValue);
-                    if (end == ']')
+                    Value jsonValue = ParseValue(streamReader, out int end, out bool success);
+                    if (success)
+                        list.Add(jsonValue);
+                    if (end == ']' || !success)
                         break;
                     else if (end != ',')
-                        throw new JsonParseException("Expected Array ending not found", stream.Position);
+                        throw new JsonParseException("Expected Array ending not found", streamReader.BaseStream.Position);
                 }
-                endMark = ReadNextMark(stream);
+                endMark = ReadNextMark(streamReader);
                 return list;
             }
 
-            private static void ParseKeyValuePaire(Stream stream, out string key, out Value value, out int endMark)
+            private static void ParseKeyValuePaire(StreamReader streamReader, out string key, out Value value, out int endMark)
             {
-                key = ParseKey(stream, out int split);
+                key = ParseKey(streamReader, out int split, out bool success);
+                if (!success)
+                {
+                    value = null;
+                    endMark = split;
+                    return;
+                }
                 if (split != ':')
-                    throw new JsonParseException("Expected key/value spliter not found", stream.Position);
-                value = ParseValue(stream, out endMark);
+                    throw new JsonParseException("Expected key/value spliter not found", streamReader.BaseStream.Position);
+                value = ParseValue(streamReader, out endMark, out _);
             }
 
-            private static string ParseKey(Stream stream, out int splitMark)
+            private static string ParseKey(StreamReader streamReader, out int splitMark, out bool success)
             {
                 stringBuilder.Clear();
-                int buffer = ReadNextMark(stream);
+                int buffer = ReadNextMark(streamReader);
                 switch (buffer)
                 {
                     case -1:
-                        throw new JsonParseException("Unexpacted key ending", stream.Position);
+                        throw new JsonParseException("Unexpacted key ending", streamReader.BaseStream.Position);
+                    case '}':
+                        splitMark = buffer;
+                        success = false;
+                        return null;
                     case '"':
                         while (true)
                         {
-                            buffer = stream.ReadByte();
+                            buffer = streamReader.Read();
                             switch (buffer)
                             {
                                 case -1:
-                                    throw new JsonParseException("Unexpacted key ending", stream.Position);
+                                    throw new JsonParseException("Unexpacted key ending", streamReader.BaseStream.Position);
                                 case '\\':
                                     stringBuilder.Append((char)buffer);
-                                    buffer = stream.ReadByte();
+                                    buffer = streamReader.Read();
                                     if (buffer == -1)
-                                        throw new JsonParseException("Unexpacted key escape ending", stream.Position);
+                                        throw new JsonParseException("Unexpacted key escape ending", streamReader.BaseStream.Position);
                                     stringBuilder.Append((char)buffer);
                                     break;
                                 case '"':
-                                    splitMark = ReadNextMark(stream);
-                                    return stringBuilder.ToString();
+                                    splitMark = ReadNextMark(streamReader);
+                                    success = true;
+                                    return Regex.Unescape(stringBuilder.ToString());
                                 default:
                                     stringBuilder.Append((char)buffer);
                                     break;
                             }
                         }
                     default:
-                        throw new JsonParseException("Unexpacted key format", stream.Position);
+                        throw new JsonParseException("Unexpacted key format", streamReader.BaseStream.Position);
                 }
             }
 
-            private static Value ParseValue(Stream stream, out int endMark)
+            private static Value ParseValue(StreamReader streamReader, out int endMark, out bool success)
             {
                 stringBuilder.Clear();
-                int buffer = ReadNextMark(stream);
+                int buffer = ReadNextMark(streamReader);
                 switch (buffer)
                 {
                     case -1:
-                        throw new JsonParseException("Unexpacted value ending", stream.Position);
+                        throw new JsonParseException("Unexpacted value ending", streamReader.BaseStream.Position);
+                    case ']':
+                        endMark = buffer;
+                        success = false;
+                        return null;
                     case '{':
-                        return ParseObject(stream, out endMark);
+                        success = true;
+                        return ParseObject(streamReader, out endMark);
                     case '[':
-                        return ParseArray(stream, out endMark);
+                        success = true;
+                        return ParseArray(streamReader, out endMark);
                     case '"':
                         while (true)
                         {
-                            buffer = stream.ReadByte();
+                            buffer = streamReader.Read();
                             switch (buffer)
                             {
                                 case -1:
-                                    throw new JsonParseException("Unexpacted value ending", stream.Position);
+                                    throw new JsonParseException("Unexpacted value ending", streamReader.BaseStream.Position);
                                 case '\\':
                                     stringBuilder.Append((char)buffer);
-                                    buffer = stream.ReadByte();
+                                    buffer = streamReader.Read();
                                     if (buffer == -1)
-                                        throw new JsonParseException("Unexpacted value escape ending", stream.Position);
+                                        throw new JsonParseException("Unexpacted value escape ending", streamReader.BaseStream.Position);
                                     stringBuilder.Append((char)buffer);
                                     break;
                                 case '"':
-                                    endMark = ReadNextMark(stream);
-                                    return new Value.String(stringBuilder.ToString());
+                                    endMark = ReadNextMark(streamReader);
+                                    success = true;
+                                    return Regex.Unescape(stringBuilder.ToString());
                                 default:
                                     stringBuilder.Append((char)buffer);
                                     break;
@@ -955,15 +944,16 @@ namespace Json
                         stringBuilder.Append((char)buffer);
                         while (true)
                         {
-                            buffer = stream.ReadByte();
+                            buffer = streamReader.Read();
                             switch (buffer)
                             {
                                 case -1:
-                                    throw new JsonParseException("Unexpacted value ending", stream.Position);
+                                    throw new JsonParseException("Unexpacted value ending", streamReader.BaseStream.Position);
                                 case ',':
                                 case '}':
                                 case ']':
                                     endMark = buffer;
+                                    success = true;
                                     string value = stringBuilder.ToString().Trim();
                                     switch (value.ToLower())
                                     {
@@ -977,7 +967,7 @@ namespace Json
                                             if (double.TryParse(value, out double result))
                                                 return new Value.Number(result);
                                             else
-                                                throw new JsonParseException("Unexpacted value type", stream.Position);
+                                                throw new JsonParseException("Unexpacted value type", streamReader.BaseStream.Position);
                                     }
                                 default:
                                     stringBuilder.Append((char)buffer);
@@ -987,12 +977,12 @@ namespace Json
                 }
             }
 
-            private static int ReadNextMark(Stream stream)
+            private static int ReadNextMark(StreamReader streamReader)
             {
                 int mark;
                 do
                 {
-                    mark = stream.ReadByte();
+                    mark = streamReader.Read();
                 }
                 while (mark != -1 && char.IsWhiteSpace((char)mark));
                 return mark;
