@@ -659,7 +659,7 @@ namespace JsonUtil
 
                 public override string ToString()
                 {
-                    return string.Format("\"{0}\"", (string)Data);
+                    return string.Format("\"{0}\"", ((string)Data).Replace("\\", "\\\\").Replace("\"", "\\\""));
                 }
             }
 
