@@ -7,6 +7,11 @@ using System.Text.RegularExpressions;
 
 namespace JsonUtil
 {
+    /// <summary>
+    /// Class <c>Json</c> is a Json parser and builder.
+    /// Author: Xuan525
+    /// Date: 7 Jan 2021
+    /// </summary>
     public class Json
     {
         #region Value
