@@ -10,7 +10,7 @@ namespace JsonUtil
     /// <summary>
     /// Class <c>Json</c> is a Json parser and builder.
     /// Author: Xuan525
-    /// Date: 7 Jan 2021
+    /// Date: 19 Jun 2021
     /// </summary>
     public class Json
     {
@@ -409,6 +409,10 @@ namespace JsonUtil
 
             public static implicit operator Value(string value)
             {
+                if (value == null)
+                {
+                    return new Null();
+                }
                 return new String(value);
             }
 
