@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -586,12 +586,12 @@ namespace JsonUtil
                     {
                         if (split)
                         {
-                            stringBuilder.Append(string.Format(",\"{0}\":{1}", keyValuePair.Key, keyValuePair.Value));
+                            stringBuilder.Append(string.Format(",\"{0}\":{1}", keyValuePair.Key.Replace("\\", "\\\\").Replace("\"", "\\\""), keyValuePair.Value));
                         }
                         else
                         {
                             split = true;
-                            stringBuilder.Append(string.Format("\"{0}\":{1}", keyValuePair.Key, keyValuePair.Value));
+                            stringBuilder.Append(string.Format("\"{0}\":{1}", keyValuePair.Key.Replace("\\", "\\\\").Replace("\"", "\\\""), keyValuePair.Value));
                         }
                     }
                     stringBuilder.Append('}');
