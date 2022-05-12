@@ -9,8 +9,8 @@ namespace JsonUtil
 {
     /// <summary>
     /// Class <c>Json</c> is a Json parser and builder.
-    /// Author: Xuan525
-    /// Date: 19 Jun 2021
+    /// Author: Xuan25
+    /// Date: 12 May 2022
     /// </summary>
     public class Json
     {
