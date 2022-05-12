@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -566,6 +566,14 @@ namespace JsonUtil
                     set
                     {
                         ((Dictionary<string, Value>)Data)[index] = value;
+                    }
+                }
+
+                public Dictionary<string, Value>.KeyCollection Keys
+                {
+                    get
+                    {
+                        return ((Dictionary<string, Value>)Data).Keys;
                     }
                 }
 
